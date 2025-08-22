@@ -1,30 +1,42 @@
+"use client"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Users, Award, Heart } from "lucide-react"
 import Link from "next/link"
+import { useEffect, useMemo, useState } from "react"
+
+type Activity = {
+  id: string
+  title: string
+  date: string
+  location: string
+  participants: number
+  description: string
+}
 
 export default function HomePage() {
-  const recentActivities = [
-    {
-      title: "Blood Donation Camp",
-      date: "January 15, 2024",
-      description: "Organized a blood donation camp in collaboration with local hospital",
-      participants: 150,
-    },
-    {
-      title: "Tree Plantation Drive",
-      date: "January 22, 2024",
-      description: "Planted 500+ saplings in the college campus and nearby areas",
-      participants: 80,
-    },
-    {
-      title: "Digital Literacy Program",
-      date: "January 28, 2024",
-      description: "Conducted computer literacy classes for rural community",
-      participants: 45,
-    },
-  ]
+  const [activities, setActivities] = useState<Activity[]>([])
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const res = await fetch("/api/activities", { cache: "no-store" })
+        const data: Activity[] = await res.json()
+        setActivities(data)
+      } catch (e) {
+        console.error("Failed to load activities", e)
+      }
+    }
+    load()
+  }, [])
+
+  const recentActivities = useMemo(() => {
+    return [...activities]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 3)
+  }, [activities])
 
   return (
     <div className="min-h-screen">

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, Edit, Trash2, Calendar, MapPin, Users, ArrowLeft, Upload, FileText, ImageIcon } from 'lucide-react'
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth"
-import { dataStore, type Activity } from "@/lib/data-store"
+import type { Activity } from "@/lib/data-store"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import PermissionGuard from "@/components/admin/permission-guard"
@@ -45,11 +45,18 @@ export default function AdminActivitiesPage() {
     loadActivities()
   }, [user, router])
 
-  const loadActivities = () => {
-    setActivities(dataStore.getActivities())
+  const loadActivities = async () => {
+    try {
+      const res = await fetch("/api/activities", { cache: "no-store" })
+      const data: Activity[] = await res.json()
+      setActivities(data)
+    } catch (e) {
+      console.error("Failed to load activities", e)
+      setActivities([])
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const activityData = {
       ...formData,
@@ -57,10 +64,22 @@ export default function AdminActivitiesPage() {
       pdfUrl: uploadedPDF,
     } as Omit<Activity, "id">
 
-    if (editingActivity) {
-      dataStore.updateActivity(editingActivity.id, activityData)
-    } else {
-      dataStore.addActivity(activityData)
+    try {
+      if (editingActivity) {
+        await fetch(`/api/activities/${editingActivity.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(activityData),
+        })
+      } else {
+        await fetch("/api/activities", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(activityData),
+        })
+      }
+    } catch (e) {
+      console.error("Failed to save activity", e)
     }
     resetForm()
     loadActivities()
@@ -73,10 +92,13 @@ export default function AdminActivitiesPage() {
     setIsAddingActivity(true)
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm("Are you sure you want to delete this activity?")) {
-      dataStore.deleteActivity(id)
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this activity?")) return
+    try {
+      await fetch(`/api/activities/${id}`, { method: "DELETE" })
       loadActivities()
+    } catch (e) {
+      console.error("Failed to delete activity", e)
     }
   }
 
@@ -141,6 +163,23 @@ export default function AdminActivitiesPage() {
         return "bg-gray-100 text-gray-800"
     }
   }
+
+  const sortedActivities = [...activities].sort((a, b) => {
+    // Prioritize by date, fallback to year and month if date is missing
+    const dateA = new Date(a.date || `${a.year}-${a.month}`)
+    const dateB = new Date(b.date || `${b.year}-${b.month}`)
+    return dateB.getTime() - dateA.getTime()
+  })
+
+  // For display, group by year and month
+  const grouped = sortedActivities.reduce((acc, activity) => {
+    const year = activity.year
+    const month = activity.month
+    if (!acc[year]) acc[year] = {}
+    if (!acc[year][month]) acc[year][month] = []
+    acc[year][month].push(activity)
+    return acc
+  }, {} as Record<string, Record<string, Activity[]>>)
 
   if (!user) return <div>Loading...</div>
 
@@ -426,6 +465,82 @@ export default function AdminActivitiesPage() {
               </Button>
             </div>
           )}
+
+          {/* Grouped Activities by Year and Month */}
+          <div className="mt-8">
+            {Object.keys(grouped).sort((a, b) => Number(b) - Number(a)).map(year => (
+              <div key={year}>
+                <h2 className="text-2xl font-bold text-gray-800 mb-4">{year}</h2>
+                {["January","February","March","April","May","June","July","August","September","October","November","December"].map(month => (
+                  <div key={month}>
+                    <h3 className="text-xl font-semibold text-gray-700 mt-4 mb-2">{month}</h3>
+                    {(grouped[year][month] || []).map(activity => (
+                      <Card key={activity.id} className="hover:shadow-lg transition-shadow mb-4">
+                        <CardHeader>
+                          <div className="flex justify-between items-start mb-2">
+                            <Badge className={getCategoryColor(activity.category)}>{activity.category}</Badge>
+                            <span className="text-sm text-gray-500 flex items-center gap-1">
+                              <Users className="w-4 h-4" />
+                              {activity.participants}
+                            </span>
+                          </div>
+                          <CardTitle className="text-xl">{activity.title}</CardTitle>
+                          <CardDescription className="space-y-1">
+                            <div className="flex items-center gap-2 text-sm">
+                              <Calendar className="w-4 h-4" />
+                              {activity.date}
+                            </div>
+                            <div className="flex items-center gap-2 text-sm">
+                              <MapPin className="w-4 h-4" />
+                              {activity.location}
+                            </div>
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="text-gray-600 mb-4 line-clamp-2">{activity.description}</p>
+
+                          {/* Media indicators */}
+                          <div className="flex items-center gap-4 mb-4 text-sm text-gray-500">
+                            {activity.images && activity.images.length > 0 && (
+                              <div className="flex items-center gap-1">
+                                <ImageIcon className="w-4 h-4" />
+                                <span>{activity.images.length} photos</span>
+                              </div>
+                            )}
+                            {(activity as any).pdfUrl && (
+                              <div className="flex items-center gap-1">
+                                <FileText className="w-4 h-4" />
+                                <span>PDF report</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex gap-2">
+                            <PermissionGuard resource="activities" action="update">
+                              <Button variant="outline" size="sm" onClick={() => handleEdit(activity)} className="flex-1">
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit
+                              </Button>
+                            </PermissionGuard>
+                            <PermissionGuard resource="activities" action="delete">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(activity.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </PermissionGuard>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </PermissionGuard>

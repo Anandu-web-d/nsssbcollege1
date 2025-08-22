@@ -3,189 +3,77 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, Users, MapPin, FileText, Clock, Download } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
-import { useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import PDFViewer from "@/components/pdf-viewer"
-import { getReportByMonth, monthlyReports } from "@/lib/reports-data"
+
+type Activity = {
+  id: string
+  title: string
+  date: string
+  location: string
+  participants: number
+  description: string
+  category: "Health" | "Education" | "Environment" | "Social Welfare"
+  month: string
+  year: string
+  images?: string[]
+  pdfUrl?: string
+}
+
+type Report = {
+  id: string
+  month: string
+  year: string
+  title: string
+  pdfUrl: string
+  summary: string
+  totalActivities: number
+  totalParticipants: number
+  totalVolunteers: number
+  budgetUtilized: string
+  uploadDate: string
+  fileSize: string
+}
 
 export default function ActivitiesPage() {
-  const monthlyActivities = {
-    january: [
-      {
-        title: "Blood Donation Camp",
-        date: "January 5, 2024",
-        location: "College Campus",
-        participants: 150,
-        description: "Organized blood donation camp in collaboration with Red Cross Society",
-        category: "Health",
-      },
-      {
-        title: "Digital Literacy Program",
-        date: "January 12, 2024",
-        location: "Rural Community Center",
-        participants: 45,
-        description: "Computer literacy classes for rural community members",
-        category: "Education",
-      },
-      {
-        title: "Tree Plantation Drive",
-        date: "January 18, 2024",
-        location: "College Campus & Nearby Areas",
-        participants: 80,
-        description: "Planted 500+ saplings to promote environmental conservation",
-        category: "Environment",
-      },
-      {
-        title: "Cleanliness Drive",
-        date: "January 22, 2024",
-        location: "Local Market Area",
-        participants: 60,
-        description: "Community cleanliness and awareness campaign",
-        category: "Social Welfare",
-      },
-      {
-        title: "Health Checkup Camp",
-        date: "January 26, 2024",
-        location: "Village Health Center",
-        participants: 120,
-        description: "Free health checkup and medical consultation for villagers",
-        category: "Health",
-      },
-      {
-        title: "Adult Literacy Classes",
-        date: "January 28, 2024",
-        location: "Community Hall",
-        participants: 35,
-        description: "Basic literacy classes for adult learners",
-        category: "Education",
-      },
-      {
-        title: "Road Safety Awareness",
-        date: "January 30, 2024",
-        location: "Main Road Junction",
-        participants: 25,
-        description: "Traffic awareness and road safety campaign",
-        category: "Social Welfare",
-      },
-    ],
-    february: [
-      {
-        title: "Women Empowerment Workshop",
-        date: "February 3, 2024",
-        location: "Women's College",
-        participants: 90,
-        description: "Skills development and empowerment workshop for women",
-        category: "Social Welfare",
-      },
-      {
-        title: "Science Exhibition",
-        date: "February 8, 2024",
-        location: "School Premises",
-        participants: 200,
-        description: "Science exhibition for school students to promote STEM education",
-        category: "Education",
-      },
-      {
-        title: "Blood Pressure Screening",
-        date: "February 14, 2024",
-        location: "Senior Citizen Center",
-        participants: 75,
-        description: "Free blood pressure screening for elderly citizens",
-        category: "Health",
-      },
-      {
-        title: "Waste Management Drive",
-        date: "February 18, 2024",
-        location: "Residential Areas",
-        participants: 55,
-        description: "Waste segregation and management awareness program",
-        category: "Environment",
-      },
-      {
-        title: "Career Guidance Session",
-        date: "February 22, 2024",
-        location: "High School",
-        participants: 150,
-        description: "Career counseling and guidance for high school students",
-        category: "Education",
-      },
-      {
-        title: "Nutrition Awareness Camp",
-        date: "February 25, 2024",
-        location: "Anganwadi Center",
-        participants: 40,
-        description: "Nutrition education for mothers and children",
-        category: "Health",
-      },
-      {
-        title: "Cultural Heritage Walk",
-        date: "February 28, 2024",
-        location: "Historical Sites",
-        participants: 65,
-        description: "Heritage conservation awareness through cultural walk",
-        category: "Social Welfare",
-      },
-    ],
-    march: [
-      {
-        title: "Water Conservation Workshop",
-        date: "March 5, 2024",
-        location: "Community Center",
-        participants: 85,
-        description: "Rainwater harvesting and water conservation techniques",
-        category: "Environment",
-      },
-      {
-        title: "Eye Checkup Camp",
-        date: "March 10, 2024",
-        location: "Rural Health Center",
-        participants: 110,
-        description: "Free eye examination and distribution of spectacles",
-        category: "Health",
-      },
-      {
-        title: "Skill Development Training",
-        date: "March 15, 2024",
-        location: "Vocational Training Center",
-        participants: 50,
-        description: "Vocational skills training for unemployed youth",
-        category: "Education",
-      },
-      {
-        title: "Anti-Drug Awareness",
-        date: "March 20, 2024",
-        location: "College Auditorium",
-        participants: 300,
-        description: "Drug abuse prevention and awareness campaign",
-        category: "Social Welfare",
-      },
-      {
-        title: "Organic Farming Workshop",
-        date: "March 22, 2024",
-        location: "Agricultural Field",
-        participants: 40,
-        description: "Training on organic farming methods for farmers",
-        category: "Environment",
-      },
-      {
-        title: "Mental Health Awareness",
-        date: "March 26, 2024",
-        location: "Community Hall",
-        participants: 70,
-        description: "Mental health awareness and counseling session",
-        category: "Health",
-      },
-      {
-        title: "Digital Payment Training",
-        date: "March 28, 2024",
-        location: "Bank Branch",
-        participants: 60,
-        description: "Training on digital payment methods for elderly",
-        category: "Education",
-      },
-    ],
-  }
+  const [activities, setActivities] = useState<Activity[]>([])
+  const [reports, setReports] = useState<Report[]>([])
+  const [showReport, setShowReport] = useState<string | null>(null)
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [aRes, rRes] = await Promise.all([
+          fetch("/api/activities", { cache: "no-store" }),
+          fetch(`/api/reports?year=${new Date().getFullYear()}`, { cache: "no-store" }),
+        ])
+        const [aData, rData] = await Promise.all([aRes.json(), rRes.json()])
+        setActivities(aData)
+        setReports(rData)
+      } catch (e) {
+        console.error("Failed to load activities/reports", e)
+      }
+    }
+    load()
+  }, [])
+
+  const latest = useMemo(() => {
+    return [...activities].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }, [activities])
+
+  const groupedByYear: Record<string, Report[]> = useMemo(() => {
+    return reports.reduce((acc, r) => {
+      acc[r.year] = acc[r.year] || []
+      acc[r.year].push(r)
+      return acc
+    }, {} as Record<string, Report[]>)
+  }, [reports])
+
+  const currentYear = new Date().getFullYear().toString()
+  const yearReports = (groupedByYear[currentYear] || []).sort((a, b) => a.month.localeCompare(b.month))
+
+  const currentReport = reports.find((r) => r.month.toLowerCase() === (showReport || "").toLowerCase() && r.year === currentYear)
 
   const getCategoryColor = (category: string) => {
     switch (category) {
@@ -202,13 +90,9 @@ export default function ActivitiesPage() {
     }
   }
 
-  const [showReport, setShowReport] = useState<string | null>(null)
-
   const viewReport = (month: string) => {
     setShowReport(month)
   }
-
-  const currentReport = showReport ? getReportByMonth(showReport, "2024") : null
 
   return (
     <div className="min-h-screen py-8">
@@ -217,16 +101,15 @@ export default function ActivitiesPage() {
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-800 mb-4">Our Activities</h1>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
-            We organize 10+ activities every month across various domains including health, education, environment, and
-            social welfare to serve our community effectively.
+            Explore our latest activities and browse monthly reports (year-wise).
           </p>
         </div>
 
-        {/* Available Reports Section */}
+        {/* Monthly Reports (Year-wise Jan-Dec) */}
         <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Monthly Reports Archive</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Monthly Reports ({currentYear})</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {monthlyReports.map((report) => (
+            {yearReports.map((report) => (
               <Card key={report.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
@@ -291,146 +174,39 @@ export default function ActivitiesPage() {
           />
         )}
 
-        {/* Monthly Activities Tabs */}
-        <Tabs defaultValue="january" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-8">
-            <TabsTrigger value="january">January 2024</TabsTrigger>
-            <TabsTrigger value="february">February 2024</TabsTrigger>
-            <TabsTrigger value="march">March 2024</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="january">
-            <div className="mb-6 flex justify-between items-center">
-              <h3 className="text-xl font-semibold">January 2024 Activities</h3>
-              <Button
-                onClick={() => viewReport("January")}
-                variant="outline"
-                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                View Monthly Report
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {monthlyActivities.january.map((activity, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex justify-between items-start mb-2">
-                      <Badge className={getCategoryColor(activity.category)}>{activity.category}</Badge>
-                      <span className="text-sm text-gray-500 flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        {activity.participants}
-                      </span>
+        {/* Latest Activities (newest first) */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">Latest Activities</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {latest.map((activity) => (
+              <Card key={activity.id} className="hover:shadow-lg transition-shadow">
+                <CardHeader>
+                  <div className="flex justify-between items-start mb-2">
+                    <Badge className={getCategoryColor(activity.category)}>{activity.category}</Badge>
+                    <span className="text-sm text-gray-500 flex items-center gap-1">
+                      <Users className="w-4 h-4" />
+                      {activity.participants}
+                    </span>
+                  </div>
+                  <CardTitle className="text-xl">{activity.title}</CardTitle>
+                  <CardDescription className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="w-4 h-4" />
+                      {activity.date}
                     </div>
-                    <CardTitle className="text-xl">{activity.title}</CardTitle>
-                    <CardDescription className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="w-4 h-4" />
-                        {activity.date}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="w-4 h-4" />
-                        {activity.location}
-                      </div>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">{activity.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="february">
-            <div className="mb-6 flex justify-between items-center">
-              <h3 className="text-xl font-semibold">February 2024 Activities</h3>
-              <Button
-                onClick={() => viewReport("February")}
-                variant="outline"
-                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                View Monthly Report
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {monthlyActivities.february.map((activity, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex justify-between items-start mb-2">
-                      <Badge className={getCategoryColor(activity.category)}>{activity.category}</Badge>
-                      <span className="text-sm text-gray-500 flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        {activity.participants}
-                      </span>
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="w-4 h-4" />
+                      {activity.location}
                     </div>
-                    <CardTitle className="text-xl">{activity.title}</CardTitle>
-                    <CardDescription className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="w-4 h-4" />
-                        {activity.date}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="w-4 h-4" />
-                        {activity.location}
-                      </div>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">{activity.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="march">
-            <div className="mb-6 flex justify-between items-center">
-              <h3 className="text-xl font-semibold">March 2024 Activities</h3>
-              <Button
-                onClick={() => viewReport("March")}
-                variant="outline"
-                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                View Monthly Report
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {monthlyActivities.march.map((activity, index) => (
-                <Card key={index} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex justify-between items-start mb-2">
-                      <Badge className={getCategoryColor(activity.category)}>{activity.category}</Badge>
-                      <span className="text-sm text-gray-500 flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        {activity.participants}
-                      </span>
-                    </div>
-                    <CardTitle className="text-xl">{activity.title}</CardTitle>
-                    <CardDescription className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Calendar className="w-4 h-4" />
-                        {activity.date}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="w-4 h-4" />
-                        {activity.location}
-                      </div>
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-gray-600">{activity.description}</p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600">{activity.description}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
 
         {/* Activity Categories Summary */}
         <div className="mt-16">

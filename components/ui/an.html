@@ -1,0 +1,20 @@
+and\Desktop\nss-website (5)\app\admin\users\page.tsx
+<PermissionGuard resource="users" action="create">
+  <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>
+    <DialogTrigger asChild>
+      <Button variant="default">
+        <Plus className="w-4 h-4 mr-2" />
+        Add User
+      </Button>
+    </DialogTrigger>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>{editingUser ? "Edit User" : "Add New User"}</DialogTitle>
+        <DialogDescription>
+          {editingUser ? "Update user information and permissions" : "Create a new user account"}
+        </DialogDescription>
+      </DialogHeader>
+      {/* Form content */}
+    </DialogContent>
+  </Dialog>
+</PermissionGuard>

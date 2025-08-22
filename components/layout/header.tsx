@@ -9,7 +9,7 @@ import { useAuth } from "@/lib/auth"
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
-  const { user } = useAuth()
+  const { user, isLoading } = useAuth()
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -51,20 +51,24 @@ export default function Header() {
               </Link>
             ))}
             {/* Admin Link */}
-            {user ? (
-              <Link href="/admin/dashboard">
-                <Button variant="outline" size="sm" className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Admin Panel
-                </Button>
-              </Link>
-            ) : (
-              <Link href="/admin/login">
-                <Button variant="outline" size="sm" className="bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Admin Login
-                </Button>
-              </Link>
+            {!isLoading && (
+              <>
+                {user ? (
+                  <Link href="/admin/dashboard">
+                    <Button variant="outline" size="sm" className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Admin Panel
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link href="/admin/login">
+                    <Button variant="outline" size="sm" className="bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100">
+                      <Settings className="w-4 h-4 mr-2" />
+                      Admin Login
+                    </Button>
+                  </Link>
+                )}
+              </>
             )}
           </nav>
 
@@ -89,20 +93,24 @@ export default function Header() {
                   </Link>
                 ))}
                 <div className="border-t pt-4">
-                  {user ? (
-                    <Link href="/admin/dashboard" onClick={() => setIsOpen(false)}>
-                      <Button variant="outline" className="w-full bg-blue-50 border-blue-200 text-blue-700">
-                        <Settings className="w-4 h-4 mr-2" />
-                        Admin Panel
-                      </Button>
-                    </Link>
-                  ) : (
-                    <Link href="/admin/login" onClick={() => setIsOpen(false)}>
-                      <Button variant="outline" className="w-full bg-gray-50 border-gray-200 text-gray-700">
-                        <Settings className="w-4 h-4 mr-2" />
-                        Admin Login
-                      </Button>
-                    </Link>
+                  {!isLoading && (
+                    <>
+                      {user ? (
+                        <Link href="/admin/dashboard" onClick={() => setIsOpen(false)}>
+                          <Button variant="outline" className="w-full bg-blue-50 border-blue-200 text-blue-700">
+                            <Settings className="w-4 h-4 mr-2" />
+                            Admin Panel
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Link href="/admin/login" onClick={() => setIsOpen(false)}>
+                          <Button variant="outline" className="w-full bg-gray-50 border-gray-200 text-gray-700">
+                            <Settings className="w-4 h-4 mr-2" />
+                            Admin Login
+                          </Button>
+                        </Link>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

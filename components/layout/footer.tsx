@@ -1,5 +1,18 @@
+"use client"
+
 import { Instagram, Youtube, Mail, Phone, MapPin } from "lucide-react"
 import Link from "next/link"
+import { useState, useEffect } from "react"
+
+function DynamicYear() {
+  const [year, setYear] = useState("2025")
+  
+  useEffect(() => {
+    setYear(new Date().getFullYear().toString())
+  }, [])
+  
+  return <span>{year}</span>
+}
 
 export default function Footer() {
   return (
@@ -104,7 +117,7 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
-          <p className="text-gray-400 text-sm">© {new Date().getFullYear()} NSS SB College. All rights reserved.</p>
+          <p className="text-gray-400 text-sm">© <DynamicYear /> NSS SB College. All rights reserved.</p>
           <div className="flex items-center gap-4 mt-4 md:mt-0">
             <p className="text-gray-400 text-sm">
               Developed with ❤️ by <span className="text-white font-semibold">Anandu A</span>

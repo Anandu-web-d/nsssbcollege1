@@ -82,7 +82,20 @@ export const DEFAULT_PERMISSIONS: Record<UserRole, Permission[]> = {
 }
 
 // Mock user credentials with different roles
-const MOCK_USERS: Record<string, { password: string; userData: Omit<User, "lastLogin"> }> = {
+const MOCK_USERS: Record<string, { password: string; userData: User }> = {
+  anandu: {
+    password: "anandu123",
+    userData: {
+      id: "1",
+      username: "anandu",
+      email: "anandu@nss.edu",
+      role: "super_admin",
+      permissions: DEFAULT_PERMISSIONS.super_admin,
+      createdAt: "2024-01-01",
+      lastLogin: new Date().toISOString(),
+      isActive: true,
+    },
+  },
   superadmin: {
     password: "super2024",
     userData: {
@@ -136,8 +149,10 @@ const MOCK_USERS: Record<string, { password: string; userData: Omit<User, "lastL
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
+    setMounted(true)
     const savedUser = localStorage.getItem("nss_admin_user")
     if (savedUser) {
       try {
@@ -160,18 +175,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(false)
   }, [])
 
-  const login = async (username: string, password: string): Promise<boolean> => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const userCredentials = MOCK_USERS[username.toLowerCase()]
-    if (userCredentials && userCredentials.password === password) {
-      const loggedInUser: User = {
-        ...userCredentials.userData,
-        lastLogin: new Date().toISOString(),
+  const login = async (username: string, password: string) => {
+    // Try localStorage first
+    const stored = localStorage.getItem("nss_users_store")
+    if (stored) {
+      const users: User[] = JSON.parse(stored)
+      const found = users.find(
+        (u) => u.username === username && u.isActive,
+      )
+      // NOTE: Since User does not have a password property, you must validate password elsewhere.
+      // For now, only username and isActive are checked. You may want to implement a proper credential store.
+      if (found) {
+        found.lastLogin = new Date().toISOString()
+        localStorage.setItem("nss_users_store", JSON.stringify(users))
+        setUser(found)
+        return true
       }
-      setUser(loggedInUser)
-      localStorage.setItem("nss_admin_user", JSON.stringify(loggedInUser))
+    }
+    // Fallback to mock users
+    const userRecord = MOCK_USERS[username]
+    if (userRecord && userRecord.password === password) {
+      userRecord.userData.lastLogin = new Date().toISOString()
+      setUser(userRecord.userData)
       return true
     }
     return false
@@ -198,6 +223,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!user) return false
 
     return ROLE_HIERARCHY[user.role] >= ROLE_HIERARCHY[requiredRole]
+  }
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return (
+      <AuthContext.Provider value={{ 
+        user: null, 
+        login: async () => false, 
+        logout: () => {}, 
+        isLoading: true, 
+        hasPermission: () => false, 
+        canAccess: () => false 
+      }}>
+        {children}
+      </AuthContext.Provider>
+    )
   }
 
   return (

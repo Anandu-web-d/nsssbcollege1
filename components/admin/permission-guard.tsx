@@ -63,5 +63,5 @@ export default function PermissionGuard({
     )
   }
 
-  return <>{children}</>
+  return <div>{children}</div>
 }

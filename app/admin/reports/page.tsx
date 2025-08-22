@@ -9,17 +9,17 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Upload, FileText, Edit, Trash2, Plus } from 'lucide-react'
-import { useState } from "react"
-import { monthlyReports, type MonthlyReportData } from "@/lib/reports-data"
+import { useEffect, useMemo, useState } from "react"
+import type { MonthlyReportData } from "@/lib/reports-data"
 import PermissionGuard from "@/components/admin/permission-guard"
 
 export default function AdminReportsPage() {
-  const [reports, setReports] = useState<MonthlyReportData[]>(monthlyReports)
+  const [reports, setReports] = useState<MonthlyReportData[]>([])
   const [isAddingReport, setIsAddingReport] = useState(false)
   const [editingReport, setEditingReport] = useState<string | null>(null)
   const [newReport, setNewReport] = useState<Partial<MonthlyReportData>>({
     month: "",
-    year: "2024",
+    year: new Date().getFullYear().toString(),
     title: "",
     summary: "",
     totalActivities: 0,
@@ -29,6 +29,23 @@ export default function AdminReportsPage() {
     pdfUrl: "",
     fileSize: "",
   })
+
+  const currentYear = useMemo(() => new Date().getFullYear().toString(), [])
+
+  const loadReports = async () => {
+    try {
+      const res = await fetch(`/api/reports?year=${currentYear}`, { cache: "no-store" })
+      const data: MonthlyReportData[] = await res.json()
+      setReports(data)
+    } catch (e) {
+      console.error("Failed to load reports", e)
+      setReports([])
+    }
+  }
+
+  useEffect(() => {
+    loadReports()
+  }, [])
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -46,27 +63,30 @@ export default function AdminReportsPage() {
     }
   }
 
-  const handleAddReport = () => {
-    if (newReport.month && newReport.title && newReport.pdfUrl) {
-      const report: MonthlyReportData = {
-        id: `${newReport.month?.toLowerCase()}-${newReport.year}`,
-        month: newReport.month!,
-        year: newReport.year!,
-        title: newReport.title!,
-        pdfUrl: newReport.pdfUrl!,
-        summary: newReport.summary || "",
-        totalActivities: newReport.totalActivities || 0,
-        totalParticipants: newReport.totalParticipants || 0,
-        totalVolunteers: newReport.totalVolunteers || 0,
-        budgetUtilized: newReport.budgetUtilized || "₹0",
-        uploadDate: new Date().toISOString().split("T")[0],
-        fileSize: newReport.fileSize || "0 MB",
-      }
-
-      setReports((prev) => [...prev, report])
+  const handleAddReport = async () => {
+    if (!(newReport.month && newReport.title && newReport.pdfUrl)) return
+    const payload: Omit<MonthlyReportData, "id"> = {
+      month: newReport.month!,
+      year: newReport.year!,
+      title: newReport.title!,
+      pdfUrl: newReport.pdfUrl!,
+      summary: newReport.summary || "",
+      totalActivities: newReport.totalActivities || 0,
+      totalParticipants: newReport.totalParticipants || 0,
+      totalVolunteers: newReport.totalVolunteers || 0,
+      budgetUtilized: newReport.budgetUtilized || "₹0",
+      uploadDate: new Date().toISOString().split("T")[0],
+      fileSize: newReport.fileSize || "0 MB",
+    }
+    try {
+      await fetch("/api/reports", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
       setNewReport({
         month: "",
-        year: "2024",
+        year: currentYear,
         title: "",
         summary: "",
         totalActivities: 0,
@@ -77,11 +97,19 @@ export default function AdminReportsPage() {
         fileSize: "",
       })
       setIsAddingReport(false)
+      loadReports()
+    } catch (e) {
+      console.error("Failed to add report", e)
     }
   }
 
-  const handleDeleteReport = (id: string) => {
-    setReports((prev) => prev.filter((report) => report.id !== id))
+  const handleDeleteReport = async (id: string) => {
+    try {
+      await fetch(`/api/reports/${id}`, { method: "DELETE" })
+      loadReports()
+    } catch (e) {
+      console.error("Failed to delete report", e)
+    }
   }
 
   return (

@@ -3,7 +3,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Users, Calendar, Award, Image, FileText, Settings, BarChart3, Activity, LogOut, Shield } from 'lucide-react'
+import { Users, Calendar, Award, Image, FileText, Settings, BarChart3, Activity, LogOut, Shield, Heart } from 'lucide-react'
 import Link from "next/link"
 import { useAuth } from "@/lib/auth"
 import { dataStore } from "@/lib/data-store"
@@ -21,6 +21,7 @@ export default function AdminDashboard() {
     achievements: 0,
     galleryImages: 0,
     reports: 0,
+    bloodRequests: 0,
   })
 
   useEffect(() => {
@@ -29,14 +30,40 @@ export default function AdminDashboard() {
       return
     }
 
-    // Load statistics
-    setStats({
-      teamMembers: dataStore.getTeamMembers().length,
-      activities: dataStore.getActivities().length,
-      achievements: dataStore.getAchievements().length,
-      galleryImages: dataStore.getGalleryImages().length,
-      reports: dataStore.getReports().length,
-    })
+    // Load statistics from API
+    const loadStats = async () => {
+      try {
+        const [activitiesRes, bloodRequestsRes] = await Promise.all([
+          fetch("/api/activities"),
+          fetch("/api/blood-requests")
+        ])
+        
+        const activities = await activitiesRes.json()
+        const bloodRequests = await bloodRequestsRes.json()
+        
+        setStats({
+          teamMembers: dataStore.getTeamMembers().length,
+          activities: activities.length,
+          achievements: dataStore.getAchievements().length,
+          galleryImages: dataStore.getGalleryImages().length,
+          reports: dataStore.getReports().length,
+          bloodRequests: bloodRequests.length,
+        })
+      } catch (error) {
+        console.error("Failed to load stats:", error)
+        // Fallback to client-side data
+        setStats({
+          teamMembers: dataStore.getTeamMembers().length,
+          activities: dataStore.getActivities().length,
+          achievements: dataStore.getAchievements().length,
+          galleryImages: dataStore.getGalleryImages().length,
+          reports: dataStore.getReports().length,
+          bloodRequests: dataStore.getBloodRequests().length,
+        })
+      }
+    }
+
+    loadStats()
   }, [user, router])
 
   const handleLogout = () => {
@@ -97,6 +124,16 @@ export default function AdminDashboard() {
       color: "bg-red-500",
       count: stats.reports,
       resource: "reports",
+      action: "read",
+    },
+    {
+      title: "Blood Requests",
+      description: "Manage blood donation requests",
+      icon: Heart,
+      href: "/admin/blood-requests",
+      color: "bg-red-500",
+      count: stats.bloodRequests,
+      resource: "blood_requests",
       action: "read",
     },
     {
@@ -162,7 +199,7 @@ export default function AdminDashboard() {
 
       <div className="container mx-auto px-4 py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Team Members</CardTitle>
@@ -201,6 +238,16 @@ export default function AdminDashboard() {
             <CardContent>
               <div className="text-2xl font-bold">{stats.galleryImages}</div>
               <p className="text-xs text-muted-foreground">Photos uploaded</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Blood Requests</CardTitle>
+              <Heart className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.bloodRequests}</div>
+              <p className="text-xs text-muted-foreground">Pending requests</p>
             </CardContent>
           </Card>
         </div>

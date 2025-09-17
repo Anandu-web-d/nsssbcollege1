@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server"
 import { readJson, writeJson } from "@/lib/server/data"
-import type { Activity } from "@/lib/data-store"
+import type { Activity } from "@/lib/server-data-store"
 
 type ActivitiesFile = Activity[]
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = params.id
+  const { id } = await params
   const updates = (await req.json()) as Partial<Activity>
   const items = await readJson<ActivitiesFile>("activities", [])
   const idx = items.findIndex((a) => a.id === id)
@@ -20,9 +20,9 @@ export async function PUT(
 
 export async function DELETE(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = params.id
+  const { id } = await params
   const items = await readJson<ActivitiesFile>("activities", [])
   const filtered = items.filter((a) => a.id !== id)
   await writeJson<ActivitiesFile>("activities", filtered)

@@ -59,6 +59,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href="/blood-request" className="text-gray-400 hover:text-white transition-colors">
+                  Blood Request
+                </Link>
+              </li>
+              <li>
                 <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
                   Contact
                 </Link>

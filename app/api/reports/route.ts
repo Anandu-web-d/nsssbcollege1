@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { readJson, writeJson } from "@/lib/server/data"
-import type { MonthlyReport } from "@/lib/data-store"
+import type { MonthlyReport } from "@/lib/server-data-store"
 
 type ReportsFile = MonthlyReport[]
 

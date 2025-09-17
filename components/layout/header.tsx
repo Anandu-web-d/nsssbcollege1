@@ -17,6 +17,7 @@ export default function Header() {
     { name: "Activities", href: "/activities" },
     { name: "Gallery", href: "/gallery" },
     { name: "Achievements", href: "/achievements" },
+    { name: "Blood Request", href: "/blood-request" },
     { name: "Contact", href: "/contact" },
   ]
 

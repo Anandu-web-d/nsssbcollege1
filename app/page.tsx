@@ -97,14 +97,14 @@ export default function HomePage() {
               <div className="bg-green-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Users className="w-8 h-8 text-green-600" />
               </div>
-              <h3 className="text-3xl font-bold text-gray-800">500+</h3>
+              <h3 className="text-3xl font-bold text-gray-800">300+</h3>
               <p className="text-gray-600">Active Volunteers</p>
             </div>
             <div className="text-center">
               <div className="bg-purple-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Award className="w-8 h-8 text-purple-600" />
               </div>
-              <h3 className="text-3xl font-bold text-gray-800">25+</h3>
+              <h3 className="text-3xl font-bold text-gray-800">10+</h3>
               <p className="text-gray-600">Awards Won</p>
             </div>
             <div className="text-center">
@@ -146,6 +146,30 @@ export default function HomePage() {
           <div className="text-center mt-8">
             <Button asChild>
               <Link href="/activities">View All Activities</Link>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Blood Request Section */}
+      <section className="py-16 bg-red-50">
+        <div className="container mx-auto px-4 text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            </svg>
+          </div>
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">Need Blood?</h2>
+          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+            Our NSS volunteers are here to help connect you with blood donors in your area. 
+            Submit a blood request and we'll assist you immediately.
+          </p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white">
+              <Link href="/blood-request">Request Blood</Link>
+            </Button>
+            <Button size="lg" variant="outline" className="border-red-600 text-red-600 hover:bg-red-50">
+              <Link href="/contact">Contact Us</Link>
             </Button>
           </div>
         </div>

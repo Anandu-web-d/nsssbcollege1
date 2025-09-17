@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { readJson, writeJson } from "@/lib/server/data"
-import type { Activity } from "@/lib/data-store"
+import type { Activity } from "@/lib/server-data-store"
 
 type ActivitiesFile = Activity[]
 

@@ -60,6 +60,22 @@ export interface MonthlyReport {
   fileSize: string
 }
 
+export interface BloodRequest {
+  id: string
+  name: string
+  phone: string
+  bloodGroup: string
+  hospital: string
+  urgency: "Low" | "Medium" | "High" | "Critical"
+  description?: string
+  location: string
+  status: "Pending" | "Fulfilled" | "Cancelled"
+  createdAt: string
+  updatedAt: string
+  contactPerson?: string
+  contactPhone?: string
+}
+
 // Initial data
 const initialTeamMembers: TeamMember[] = [
   {
@@ -417,6 +433,36 @@ class DataStore {
     const reports = this.getReports()
     const updatedReports = reports.filter((report) => report.id !== id)
     this.setData("reports", updatedReports)
+  }
+
+  // Blood Requests
+  getBloodRequests(): BloodRequest[] {
+    return this.getData("blood_requests", [])
+  }
+
+  addBloodRequest(request: Omit<BloodRequest, "id">): BloodRequest {
+    const requests = this.getBloodRequests()
+    const newRequest: BloodRequest = {
+      ...request,
+      id: Date.now().toString(),
+    }
+    const updatedRequests = [...requests, newRequest]
+    this.setData("blood_requests", updatedRequests)
+    return newRequest
+  }
+
+  updateBloodRequest(id: string, updates: Partial<BloodRequest>): void {
+    const requests = this.getBloodRequests()
+    const updatedRequests = requests.map((request) => 
+      request.id === id ? { ...request, ...updates, updatedAt: new Date().toISOString() } : request
+    )
+    this.setData("blood_requests", updatedRequests)
+  }
+
+  deleteBloodRequest(id: string): void {
+    const requests = this.getBloodRequests()
+    const updatedRequests = requests.filter((request) => request.id !== id)
+    this.setData("blood_requests", updatedRequests)
   }
 }
 
